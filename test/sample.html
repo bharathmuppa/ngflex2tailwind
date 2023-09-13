@@ -1,4 +1,13 @@
-<div></div>
+<div fxLayout="row" fxLayoutAlign="space-around center" fxLayoutGap="1rem"></div>
+<div fxLayout="column" fxLayoutAlign="space-around center" fxLayoutGap="1rem"></div>
+<div [fxLayout]="row" [fxLayoutAlign]="space-around center" [fxLayoutGap]="1rem"></div>
+<div [fxLayout]="row" [fxLayoutAlign]="space-around center" [fxLayoutGap]="1rem">
+    <div fxFlex="auto"></div>
+    <div fxFlex="100%"></div>
+    <div fxFlex></div>
+    <div></div>
+</div>
+<div fxFill></div>
 <mat-button-toggle></mat-button-toggle>
 <div fxLayout.md="row" fxLayout="col">
     <div fxFlex="obj1?.a ===10 ? obj2 : obj3"></div>
