@@ -6,11 +6,16 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "bin": {
+    "ngflex2tailwind": "./migrate.js"
+  },
   "keywords": [],
-  "author": "",
+  "author": "bharathmuppa",
   "license": "ISC",
   "dependencies": {
+    "acorn": "^8.10.0",
     "cheerio": "^1.0.0-rc.12",
+    "commander": "^11.0.0",
     "glob": "^10.3.4"
   }
 }

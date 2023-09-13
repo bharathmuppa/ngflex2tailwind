@@ -1,15 +1,48 @@
+#!/usr/bin/env node
+const program = require('commander');
 const fs = require('fs').promises;
-const {glob} = require("glob")
+const { glob } = require("glob")
 const cheerio = require('cheerio');
+const acorn = require('acorn');
+
+program
+  .version('1.0.0')
+  .description('Migrtion tool for Angular Flex layout to Tailwind')
+  .option('-p, --path <path>', 'Path to folder')
+  .option('-r, --recursive [value]', 'Loop over sub folders', true)
+  .parse(process.argv);
+
+let inputPath;
+let finalPath;
+
+let options= program.opts();
+
+console.log(options);
+if (options.path && options.recursive ) {
+  inputPath = getFinalPath(options.path);
+  inputPath+= "/**/*.html";
+} else if (!options.path && options.recursive ){
+  inputPath = './**/*.html';
+} else {
+  inputPath = './*.html';
+}
+
+console.log(inputPath);
+
+function getFinalPath(inputPath) {
+  // Use path.resolve to get the final path
+  const finalPath = path.resolve(inputPath);
+  return finalPath;
+}
 
 // Loop over Templates within files
 async function loopOverTemplates() {
-// options is optional
+  // options is optional
 
-  const templates = await glob("./projects/asml-angular/material/**/button-toggle.*.html", {ignore: 'node_modules/**'});
+  const templates = await glob(inputPath, { ignore: 'node_modules/**' });
 
   for (const templatePath of templates) {
-    console.info(templatePath)
+    console.info(templatePath);
     const contents = await fs.readFile(templatePath, 'utf8');
     const $ = cheerio.load(contents, {
       xmlMode: true, // Preserve case sensitivity
@@ -36,7 +69,12 @@ async function loopOverTemplates() {
     migrateFlexFillToTailwind($);
 
     convertAllSelfClosingTagsToOpenAndCloseTags($);
-
+   if(finalPath){
+    await fs.writeFile(finalPath, $.html({ xmlMode: true }), {
+      encoding: 'utf-8'
+    });
+    return;
+   }
     await fs.writeFile(templatePath, $.html({ xmlMode: true }), {
       encoding: 'utf-8'
     });
@@ -53,6 +91,26 @@ function handleFxLayout(element, layoutValue, className) {
   $(`[fxLayout="${layoutValue}"], [\\[fxLayout=\\"${layoutValue}\\"\\]]`).each((index, element) => {
     // Remove the fxLayout attribute
     $(element).removeAttr('fxLayout [fxLayout]');
+
+    // Add the class with flex and layout class
+    $(element).addClass(`flex ${className}`);
+  });
+}
+
+// Function to handle fxLayout attribute
+function handleResponsiveFxLayout(element, layoutValue, className, resolution) {
+  const $ = element;
+  const responseMap = {
+    'xs': 'sm',
+    'sm': 'md',
+    'md': 'lg',
+    'lg': 'sxl',
+    'xl': '2xl'
+  };
+
+  $(`[fxLayout.${resolution}="${layoutValue}"], [\\[fxLayout.${resolution}=\\"${layoutValue}\\"\\]]`).each((index, element) => {
+    // Remove the fxLayout attribute
+    $(element).removeAttr(`fxLayout.${resolution} [fxLayout.${resolution}]`);
 
     // Add the class with flex and layout class
     $(element).addClass(`flex ${className}`);
@@ -100,8 +158,34 @@ function migrateFxLayoutAlignToTailwind(element) {
   $('[fxLayoutAlign], [\\[fxLayoutAlign\\]]').each((index, element) => {
     const alignValue = $(element).attr('fxLayoutAlign') || $(element).attr('[fxLayoutAlign]');
 
-    if((alignValue.match(/\?/g)||[]).length>1 ){
-      $(element).before(`\n<!-- TODO: Please Migrate these fxLayoutAlign with terniary operators Manually -->\n`);
+    // in case of terniary opearators, we should do more processing
+    if (alignValue && alignValue.includes('?')) {
+      $(element).before(`\n<!-- TODO: Check this migration script as it is tricky to convert all conditional operations in templates -->\n`);
+
+      // then find out terniary opeartor with optional chaining
+      const terniaryOperation = extractTernaryValues(alignValue);
+
+      const [mainAxisT, crossAxisT] = terniaryOperation.truthy.split(' ');
+      const mainAxisClassT = flexLayoutAlignMap[mainAxisT] ? flexLayoutAlignMap[mainAxisT].mainAxis : '';
+      const crossAxisClassT = flexLayoutAlignMap[crossAxisT] ? flexLayoutAlignMap[crossAxisT].crossAxis : '';
+
+      const [mainAxisF, crossAxisF] = terniaryOperation.falsy.split(' ');
+      const mainAxisClassF = flexLayoutAlignMap[mainAxisF] ? flexLayoutAlignMap[mainAxisF].mainAxis : '';
+      const crossAxisClassF = flexLayoutAlignMap[crossAxisF] ? flexLayoutAlignMap[crossAxisF].crossAxis : '';
+
+      let ngClass;
+
+      if ($(element).attr('ngClass')?.length > 0) {
+        $(element).before(`\n<!-- TODO: Add following ngClass manually \n{'${terniaryOperation.condition.trim()}': '${mainAxisClassT} ${crossAxisClassT}', '!${terniaryOperation.trim()}': '${mainAxisClassF} ${crossAxisClassF}' -->\n`);
+      } else {
+        ngClass = `{'${terniaryOperation.condition.trim()}': '${mainAxisClassT} ${crossAxisClassT}', '!${terniaryOperation.condition.trim()}': '${mainAxisClassF} ${crossAxisClassF}'`;
+        $(element).attr('ngClass', ngClass);
+      }
+
+
+      // Remove the fxLayoutAlign attribute
+      $(element).removeAttr('fxLayoutAlign [fxLayoutAlign]');
+
       return;
     }
 
@@ -131,7 +215,7 @@ function migrateFxLayoutGapToTailwind(element) {
   $('[fxLayoutGap], [\\[fxLayoutGap\\]]').each((index, element) => {
     const gapValue = $(element).attr('fxLayoutGap') || $(element).attr('[fxLayoutGap]');
 
-    if((gapValue.match(/\?/g)||[]).length>1 ){
+    if ((gapValue.match(/\?/g) || []).length > 1) {
       $(element).before(`\n<!-- TODO: Please Migrate these fxLayoutGap with terniary operators Manually -->\n`);
       return;
     }
@@ -153,31 +237,23 @@ function migrateFxFlexToTailwind(element) {
 
     let flexValue = $(element).attr('fxFlex') || $(element).attr('[fxFlex]');
 
-    // Remove the fxFlex attribute
-    $(element).removeAttr('fxFlex [fxFlex]');
-
 
     if (!flexValue) {
       $(element).addClass('flex-auto');
       return;
     }
 
-    if((flexValue.match(/\?/g)||[]).length>1 ){
-      $(element).before(`\n<!-- TODO: Please Migrate these fxFlex with terniary operators Manually -->\n`);
-      return;
-    }
+
     // Check if the flexValue contains a ternary operator
     if (flexValue && flexValue.includes('?')) {
 
-      const [condition, values] = flexValue.split('?');
-      const [trueValue, falseValue] = values.split(':');
 
+      // then find out terniary opeartor with optional chaining
+      const terniaryOperation = extractTernaryValues(flexValue);
 
-
-      const ngClass = `{'${condition.trim()}': 'flex-[${trueValue.trim().replace(/^'|'$/g, '').split(" ").join("_")}]', '!${condition.trim()}': 'flex-[${falseValue.trim().replace(/^'|'$/g, '').split(" ").join("_")}'}]`;
+      const ngClass = `{'${terniaryOperation.condition.trim()}': 'flex-[${terniaryOperation.truthy.trim().replace(/^'|'$/g, '').split(" ").join("_")}]', '!${terniaryOperation.condition.trim()}': 'flex-[${terniaryOperation.falsy.trim().replace(/^'|'$/g, '').split(" ").join("_")}'}]`;
       $(element).attr('ngClass', ngClass);
     } else {
-
       // Check for different variations of flexValue
       if (flexValue === 'auto') {
         $(element).addClass('flex-auto');
@@ -188,6 +264,11 @@ function migrateFxFlexToTailwind(element) {
         $(element).addClass(`flex-grow-${flexGrow} flex-shrink-${flexShrink} flex-${flexBasis}`);
       }
     }
+
+    // Remove the fxFlex attribute
+    $(element).removeAttr('fxFlex [fxFlex]');
+
+
   });
 }
 
@@ -207,8 +288,8 @@ function migrateFlexFillToTailwind(element) {
  *  This function is needed as a side effect of cheerio initial lode property , xmlMode = true
  * @param element
  */
-function convertAllSelfClosingTagsToOpenAndCloseTags(element){
-  const $= element;
+function convertAllSelfClosingTagsToOpenAndCloseTags(element) {
+  const $ = element;
   $('*').each((index, element) => {
     const tagName = element.tagName;
 
@@ -221,3 +302,40 @@ function convertAllSelfClosingTagsToOpenAndCloseTags(element){
   });
   console.log($.html());
 }
+
+
+function extractTernaryValues(expression) {
+  const ast = acorn.parse(expression, { ecmaVersion: 'latest' });
+
+  function traverse(node) {
+    if (node.type === 'ConditionalExpression') {
+      const condition = expression.substring(node.test.start, node.test.end);
+      const truthyValue = expression.substring(node.consequent.start, node.consequent.end);
+      const falsyValue = expression.substring(node.alternate.start, node.alternate.end);
+
+      return {
+        condition: condition.trim(),
+        truthy: truthyValue.trim(),
+        falsy: falsyValue.trim(),
+      };
+    }
+    return null;
+  }
+
+  console.log();
+
+  const result = traverse(ast.body[0].expression);
+
+  if (!result) {
+    console.log(expression);
+    console.log(ast);
+    throw new Error('Invalid ternary expression format');
+  }
+
+  return result;
+}
+
+
+
+
+
