@@ -6,6 +6,7 @@
     <div fxFlex="100%"></div>
     <div fxFlex></div>
     <div></div>
+    <div fxFill></div>
 </div>
 <div fxFill></div>
 <mat-button-toggle></mat-button-toggle>
@@ -13,5 +14,6 @@
     <div fxFlex="obj1?.a ===10 ? '10rem' : 'auto'"></div>
     <div [fxFlex]="obj1?.a ===10 ? '10rem' : 'auto'"></div>
     <div [fxLayoutAlign]="obj1?.a ===10 ? 'space-around center' : 'start center'"></div>
+    <div [fxLayoutAlign]="obj1.a ===10 ? 'space-around center' : 'start center'"></div>
 </div>
 <span></span>
