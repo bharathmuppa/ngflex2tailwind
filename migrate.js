@@ -17,7 +17,6 @@ let finalPath;
 
 let options = program.opts();
 
-console.log(options);
 if (options.path && options.recursive) {
   inputPath = getFinalPath(options.path);
   inputPath += "/**/*.html";
@@ -27,12 +26,10 @@ if (options.path && options.recursive) {
   inputPath = './*.html';
 }
 
-console.log(inputPath);
 
 function getFinalPath(inputPath) {
   // Use path.resolve to get the final path
-  const finalPath = path.resolve(inputPath);
-  return finalPath;
+  return path.resolve(inputPath);
 }
 
 // Loop over Templates within files
@@ -164,13 +161,14 @@ function migrateFxLayoutAlignToTailwind(element) {
       $(element).before(`\n<!-- TODO: Check this migration script as it is tricky to convert all conditional operations in templates -->\n`);
 
       // then find out terniary opeartor with optional chaining
-      const  terniaryOperation= extractTernaryValues(alignValue);
+      const terniaryOperation = extractTernaryValues(alignValue);
 
-      const [mainAxisT, crossAxisT] = terniaryOperation.truthy.split(' ');
+      const [mainAxisT, crossAxisT] = stringConversion(terniaryOperation.truthy).split(' ');
+     
       const mainAxisClassT = flexLayoutAlignMap[mainAxisT] ? flexLayoutAlignMap[mainAxisT].mainAxis : '';
       const crossAxisClassT = flexLayoutAlignMap[crossAxisT] ? flexLayoutAlignMap[crossAxisT].crossAxis : '';
 
-      const [mainAxisF, crossAxisF] = terniaryOperation.falsy.split(' ');
+      const [mainAxisF, crossAxisF] = stringConversion(terniaryOperation.falsy).split(' ');
       const mainAxisClassF = flexLayoutAlignMap[mainAxisF] ? flexLayoutAlignMap[mainAxisF].mainAxis : '';
       const crossAxisClassF = flexLayoutAlignMap[crossAxisF] ? flexLayoutAlignMap[crossAxisF].crossAxis : '';
 
@@ -246,7 +244,7 @@ function migrateFxFlexToTailwind(element) {
       return;
     }
 
-    
+
 
     // Check if the flexValue contains a ternary operator
     if (flexValue && flexValue.includes('?')) {
@@ -258,14 +256,14 @@ function migrateFxFlexToTailwind(element) {
       $(element).attr('ngClass', ngClass);
       $(element).addClass('box-border');
 
-    
-      if(flexValue.includes('100%')){
+
+      if (flexValue.includes('100%')) {
         $(element).addClass('max-w-[100%]');
       }
     } else {
       // Check for different variations of flexValue
       $(element).addClass(convertFlex(flexValue) + ' box-border');
-      if(flexValue.includes('100%')){
+      if (flexValue.includes('100%')) {
         $(element).addClass('max-w-[100%]');
       }
     }
@@ -302,9 +300,10 @@ function stringConversion(input) {
 function migrateFlexFillToTailwind(element) {
   const $ = element;
 
-  $('[fxFlexFill], [\\[fxFlexFill\\]]').each((index, element) => {
-    $(element).addClass('w-full h-full min-w-full min-h-full');
-    $(element).removeAttr('fxFlexFill [fxFlexFill]');
+  $('[fxFill], [fxFlexFill], [\\[fxFlexFill\\]], [\\[fxFill\\]]').each((index, element) => {
+    $(element).removeAttr('fxFlexFill [fxFlexFill] fxFill [fxFill]');
+    $(element).addClass('w-full h-full min-w-full min-h-full box-border');
+
   });
 
   return $.html();

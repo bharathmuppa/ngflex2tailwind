@@ -1,8 +1,16 @@
-Introduction
+## Introduction
 
 As Angular flex layout is deprecated, This tool helps in that migration.
 
-Flexlayout to Tailwind Map
+# Usage
+
+- `npx @ngnomads/ngflex2tailwind` By Default it Starts executing from Current Directory and Sub Directoroes
+- `npx @ngnomads/ngflex2tailwind -r false` it Starts executing in Current Directory as you Switched off the Recursiveness
+- `npx @ngnomads/ngflex2tailwind -r false -p ./test` you can also specify the folder to migrate
+
+# Flexlayout to Tailwind Map
+
+Technically we convert following directives into tailwind utility classes.
 
 |Angular Flexlayout| Tailwind|	Native css|
 |----|----|-----|
@@ -21,3 +29,6 @@ Flexlayout to Tailwind Map
 |fxFlexAlign="start"|class="self-start"||
 |fxFlexAlign="center"|class="self-center"||
 |fxFill	|class="min-w-[100%] w-[100%] min-h-[100%] h-[100%] m-0 "	| {<br> margin: 0;<br>height: 100%;<br>width:100%;<br>min-heght:100%;<br>min-width:100%}
+
+
+Note: Still this is in beta version, So please expect to have some bugs.

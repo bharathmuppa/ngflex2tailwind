@@ -1,17 +1,22 @@
 {
-  "name": "ngflex2tailwind",
+  "name": "@ngnomads/ngflex2tailwind",
   "version": "1.0.0",
-  "description": "",
+  "description": "Tool to Migrate from Angular Flex layout to Tailwind",
   "main": "migrate.js",
+   
+"homepage": "https://github.com/bharathmuppa/ngflex2tailwind/blob/main/README.md",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "bin": {
     "ngflex2tailwind": "./migrate.js"
   },
-  "keywords": [],
+  "keywords": ['Angular Flex Layout', 'Angular', 'Tailwind'],
   "author": "bharathmuppa",
   "license": "ISC",
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "acorn": "^8.10.0",
     "cheerio": "^1.0.0-rc.12",
