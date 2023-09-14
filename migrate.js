@@ -40,7 +40,9 @@ async function loopOverTemplates() {
 
   for (const templatePath of templates) {
     console.info(templatePath);
+    
     const contents = await fs.readFile(templatePath, 'utf8');
+    
     const $ = cheerio.load(contents, {
       xmlMode: true, // Preserve case sensitivity
       decodeEntities: false,
@@ -49,10 +51,7 @@ async function loopOverTemplates() {
     });
 
     // Call the function to handle fxLayout attribute for row layout
-    handleFxLayout($, 'row', 'flex-row');
-
-    // Call the function to handle fxLayout attribute for column layout
-    handleFxLayout($, 'column', 'flex-col');
+    handleFxLayout($);
 
     // Call the function to handle all scenarios with flex layout align
     migrateFxLayoutAlignToTailwind($)
@@ -83,15 +82,18 @@ async function loopOverTemplates() {
 loopOverTemplates().then(r => console.log("Processing completed"), err => console.log(err));
 
 // Function to handle fxLayout attribute
-function handleFxLayout(element, layoutValue, className) {
+function handleFxLayout(element) {
   const $ = element;
-  $(`[fxLayout="${layoutValue}"], [\\[fxLayout=\\"${layoutValue}\\"\\]]`).each((index, element) => {
+  const map = {
+    'row': 'flex-row',
+    'column': 'flex-col'
+  }
+  $(`[fxLayout], [\\[fxLayout\\]]`).each((index, element) => {
+    const layoutValues = $(element).attr('fxLayout') || $(element).attr('[fxLayout]');
     // Remove the fxLayout attribute
-    $(element).removeAttr('fxLayout');
-    $(element).removeAttr('[fxLayout]');
-
+    $(element).removeAttr('fxLayout [fxLayout]');
     // Add the class with flex and layout class
-    $(element).addClass(`flex ${className}`);
+    $(element).addClass(`flex ${map[layoutValues]}`);
   });
 }
 
