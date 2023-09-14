@@ -11,7 +11,7 @@
   "bin": {
     "ngflex2tailwind": "./migrate.js"
   },
-  "keywords": ['Angular Flex Layout', 'Angular', 'Tailwind'],
+  "keywords": ["Angular Flex Layout", "Angular", "Tailwind"],
   "author": "bharathmuppa",
   "license": "ISC",
   "publishConfig": {
