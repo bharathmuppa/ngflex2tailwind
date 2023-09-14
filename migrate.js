@@ -15,13 +15,13 @@ program
 let inputPath;
 let finalPath;
 
-let options= program.opts();
+let options = program.opts();
 
 console.log(options);
-if (options.path && options.recursive ) {
+if (options.path && options.recursive) {
   inputPath = getFinalPath(options.path);
-  inputPath+= "/**/*.html";
-} else if (!options.path && options.recursive ){
+  inputPath += "/**/*.html";
+} else if (!options.path && options.recursive) {
   inputPath = './**/*.html';
 } else {
   inputPath = './*.html';
@@ -68,13 +68,13 @@ async function loopOverTemplates() {
 
     migrateFlexFillToTailwind($);
 
-    convertAllSelfClosingTagsToOpenAndCloseTags($);
-   if(finalPath){
-    await fs.writeFile(finalPath, $.html({ xmlMode: true }), {
-      encoding: 'utf-8'
-    });
-    return;
-   }
+    //  convertAllSelfClosingTagsToOpenAndCloseTags($);
+    if (finalPath) {
+      await fs.writeFile(finalPath, $.html({ xmlMode: true }), {
+        encoding: 'utf-8'
+      });
+      return;
+    }
     await fs.writeFile(templatePath, $.html({ xmlMode: true }), {
       encoding: 'utf-8'
     });
@@ -90,7 +90,8 @@ function handleFxLayout(element, layoutValue, className) {
   const $ = element;
   $(`[fxLayout="${layoutValue}"], [\\[fxLayout=\\"${layoutValue}\\"\\]]`).each((index, element) => {
     // Remove the fxLayout attribute
-    $(element).removeAttr('fxLayout [fxLayout]');
+    $(element).removeAttr('fxLayout');
+    $(element).removeAttr('[fxLayout]');
 
     // Add the class with flex and layout class
     $(element).addClass(`flex ${className}`);
@@ -163,7 +164,7 @@ function migrateFxLayoutAlignToTailwind(element) {
       $(element).before(`\n<!-- TODO: Check this migration script as it is tricky to convert all conditional operations in templates -->\n`);
 
       // then find out terniary opeartor with optional chaining
-      const terniaryOperation = extractTernaryValues(alignValue);
+      const  terniaryOperation= extractTernaryValues(alignValue);
 
       const [mainAxisT, crossAxisT] = terniaryOperation.truthy.split(' ');
       const mainAxisClassT = flexLayoutAlignMap[mainAxisT] ? flexLayoutAlignMap[mainAxisT].mainAxis : '';
@@ -239,29 +240,33 @@ function migrateFxFlexToTailwind(element) {
 
 
     if (!flexValue) {
-      $(element).addClass('flex-auto');
+      $(element).addClass('flex-[1_1_0%] box-border');
+      // Remove the fxFlex attribute
+      $(element).removeAttr('fxFlex [fxFlex]');
       return;
     }
 
+    
 
     // Check if the flexValue contains a ternary operator
     if (flexValue && flexValue.includes('?')) {
 
-
       // then find out terniary opeartor with optional chaining
       const terniaryOperation = extractTernaryValues(flexValue);
 
-      const ngClass = `{'${terniaryOperation.condition.trim()}': 'flex-[${terniaryOperation.truthy.trim().replace(/^'|'$/g, '').split(" ").join("_")}]', '!${terniaryOperation.condition.trim()}': 'flex-[${terniaryOperation.falsy.trim().replace(/^'|'$/g, '').split(" ").join("_")}'}]`;
+      const ngClass = `{${terniaryOperation.condition.trim()}: '${convertFlex(terniaryOperation.truthy)}', !${terniaryOperation.condition.trim()}: '${convertFlex(terniaryOperation.falsy)}'}`;
       $(element).attr('ngClass', ngClass);
+      $(element).addClass('box-border');
+
+    
+      if(flexValue.includes('100%')){
+        $(element).addClass('max-w-[100%]');
+      }
     } else {
       // Check for different variations of flexValue
-      if (flexValue === 'auto') {
-        $(element).addClass('flex-auto');
-      } else if (flexValue.includes('%') || flexValue.includes('px') || flexValue.includes('%rem')) {
-        $(element).addClass(`flex-[${flexValue}]`);
-      } else if (flexValue && flexValue.length > 0) {
-        const [flexGrow, flexShrink, flexBasis] = flexValue.split(' ');
-        $(element).addClass(`flex-grow-${flexGrow} flex-shrink-${flexShrink} flex-${flexBasis}`);
+      $(element).addClass(convertFlex(flexValue) + ' box-border');
+      if(flexValue.includes('100%')){
+        $(element).addClass('max-w-[100%]');
       }
     }
 
@@ -270,6 +275,27 @@ function migrateFxFlexToTailwind(element) {
 
 
   });
+}
+
+function convertFlex(flexValue) {
+  // Check for different variations of flexValue
+  flexValue = stringConversion(flexValue);
+  if (flexValue === 'auto') {
+    return 'flex-[1_1_auto]';
+  } else if (flexValue.includes('%') || flexValue.includes('px') || flexValue.includes('rem')) {
+    return 'flex-[1_1_' + flexValue + ']';
+  } else if (flexValue === "none") {
+    return 'flex-[0_0_auto]';
+  } else if (flexValue === "grow") {
+    return 'flex-[1_1_100%]';
+  } else if (flexValue && flexValue.length > 0) {
+    const [flexGrow, flexShrink, flexBasis] = flexValue.split(' ');
+    return 'flex-[' + flexGrow + '_' + flexShrink + '_' + flexBasis + ']';
+  }
+}
+
+function stringConversion(input) {
+  return input.replace(/^'|'$/g, '');
 }
 
 
@@ -282,25 +308,6 @@ function migrateFlexFillToTailwind(element) {
   });
 
   return $.html();
-}
-
-/**
- *  This function is needed as a side effect of cheerio initial lode property , xmlMode = true
- * @param element
- */
-function convertAllSelfClosingTagsToOpenAndCloseTags(element) {
-  const $ = element;
-  $('*').each((index, element) => {
-    const tagName = element.tagName;
-
-    // Check if the element is self-closed
-    if (element.childNodes.length === 0) {
-      // Replace the self-closed element with opening and closing tags
-      $(element).replaceWith(`<${tagName}></${tagName}>`);
-    }
-
-  });
-  console.log($.html());
 }
 
 
