@@ -53,6 +53,9 @@ async function loopOverTemplates() {
     // Call the function to handle fxLayout attribute for row layout
     handleFxLayout($);
 
+    // call this function to handle fxlayout with responsive attibutes
+    handleResponsiveFxLayout($);
+
     // Call the function to handle all scenarios with flex layout align
     migrateFxLayoutAlignToTailwind($)
 
@@ -81,7 +84,7 @@ async function loopOverTemplates() {
 
 loopOverTemplates().then(r => console.log("Processing completed"), err => console.log(err));
 
-// Function to handle fxLayout attribute
+// Handles fxLayout attribute,  this is not for the responsive attributes
 function handleFxLayout(element) {
   const $ = element;
   const map = {
@@ -97,25 +100,15 @@ function handleFxLayout(element) {
   });
 }
 
-// Function to handle fxLayout attribute
-function handleResponsiveFxLayout(element, layoutValue, className, resolution) {
+// Handles fxLayout attribute which has responsive attributes
+function handleResponsiveFxLayout(element) {
   const $ = element;
-  const responseMap = {
-    'xs': 'sm',
-    'sm': 'md',
-    'md': 'lg',
-    'lg': 'sxl',
-    'xl': '2xl'
-  };
-
-  $(`[fxLayout.${resolution}="${layoutValue}"], [\\[fxLayout.${resolution}=\\"${layoutValue}\\"\\]]`).each((index, element) => {
-    // Remove the fxLayout attribute
-    $(element).removeAttr(`fxLayout.${resolution} [fxLayout.${resolution}]`);
-
-    // Add the class with flex and layout class
-    $(element).addClass(`flex ${className}`);
+  
+  $(`[fxLayout\\.sm], [fxLayout\\.xs], [fxLayout\\.md], [fxLayout\\.lg], [fxLayout\\.xl] `).each((index, element) => {
+    $(element).before(`\n<!-- TODO: Responsive  API migration is not yet handled, so please take care of it manually -->\n`);
   });
 }
+
 
 
 // Function to handle fxLayoutAlign attribute
