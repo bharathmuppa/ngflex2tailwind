@@ -1,6 +1,7 @@
 ## Introduction
 
-As Angular flex layout is deprecated, This tool helps in that migration.
+As Angular flex layout is deprecated, This tool helps in migrating from flex layout to Tailwind. 
+
 
 # Usage
 
@@ -31,4 +32,5 @@ Technically we convert following directives into tailwind utility classes.
 |fxFill	|class="min-w-[100%] w-[100%] min-h-[100%] h-[100%] m-0 "	| {<br> margin: 0;<br>height: 100%;<br>width:100%;<br>min-heght:100%;<br>min-width:100%}
 
 
-Note: Still this is in beta version, So please expect to have some bugs.
+> Note: Still this is in beta version, So please expect to have some bugs.
+> Note: This tool doesn't support the flex responsive api yet.
