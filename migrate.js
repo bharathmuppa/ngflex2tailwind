@@ -89,7 +89,11 @@ function handleFxLayout(element) {
   const $ = element;
   const map = {
     'row': 'flex-row',
-    'column': 'flex-col'
+    'column': 'flex-col',
+    'row wrap': 'flex-row flex-wrap',
+    'wrap row': 'flex-row flex-wrap',
+    'column wrap': 'flex-col flex-wrap',
+    'wrap column': 'flex-col flex-wrap'
   }
   $(`[fxLayout], [\\[fxLayout\\]]`).each((index, element) => {
     const layoutValues = $(element).attr('fxLayout') || $(element).attr('[fxLayout]');
