@@ -89,7 +89,11 @@ function handleFxLayout(element) {
   const $ = element;
   const map = {
     'row': 'flex-row',
-    'column': 'flex-col'
+    'column': 'flex-col',
+    'row wrap': 'flex-row flex-wrap',
+    'wrap row': 'flex-row flex-wrap',
+    'column wrap': 'flex-col flex-wrap',
+    'wrap column': 'flex-col flex-wrap'
   }
   $(`[fxLayout], [\\[fxLayout\\]]`).each((index, element) => {
     const layoutValues = $(element).attr('fxLayout') || $(element).attr('[fxLayout]');
@@ -279,7 +283,7 @@ function convertFlex(flexValue) {
     return 'flex-[1_1_' + flexValue + ']';
   } else if (flexValue === "none") {
     return 'flex-[0_0_auto]';
-  } else if (flexValue === "grow") {
+  } else if (flexValue === "grow" || flexValue=="100") {
     return 'flex-[1_1_100%]';
   } else if (flexValue && flexValue.length > 0) {
     const [flexGrow, flexShrink, flexBasis] = flexValue.split(' ');
