@@ -200,7 +200,7 @@ function migrateFxLayoutAlignToTailwind(element) {
     // Add the classes for main axis and cross axis
     $(element).addClass(`${mainAxisClass} ${crossAxisClass}`);
 
-    if (!$(element).hasClass('flex flex-row') || !$(element).hasClass('flex flex-col')) {
+    if (!$(element).hasClass('flex flex-row') && !$(element).hasClass('flex flex-col')) {
       $(element).addClass(`flex flex-row`);
     }
   });
