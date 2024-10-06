@@ -279,7 +279,7 @@ function convertFlex(flexValue) {
     return 'flex-[1_1_' + flexValue + ']';
   } else if (flexValue === "none") {
     return 'flex-[0_0_auto]';
-  } else if (flexValue === "grow" || || flexValue=="100") {
+  } else if (flexValue === "grow" || flexValue=="100") {
     return 'flex-[1_1_100%]';
   } else if (flexValue && flexValue.length > 0) {
     const [flexGrow, flexShrink, flexBasis] = flexValue.split(' ');
