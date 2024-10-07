@@ -1,0 +1,36 @@
+<div fxLayout="column" fxLayoutGap="0.6rem" fxLayoutAlign="start start">
+    <span
+            id="structure-attributes" fxLayout="column" fxLayoutAlign="start start"
+            fxFlex="100" fxFlexFill fxLayoutGap="1rem">
+
+        <span>Structure Attributes</span>
+        <span fxLayout="row wrap" fxLayoutGap="1.5rem grid" fxFlexFill
+              fxLayoutAlign="start start">
+            <ng-container
+                    *ngFor="let structureData of structureBulkEditData">
+                <ng-container
+                        [ngTemplateOutlet]="structureData.type === 'Single Select' ? singleSelectRef : structureData.type === 'Multi Select' ? multiSelectRef : inputTextRef"
+                        [ngTemplateOutletContext]="{ $implicit: structureData }"></ng-container>
+            </ng-container>
+        </span>
+    </span>
+    <span fxLayout="row" fxFlexFill>
+        <mat-divider fxFill></mat-divider>
+    </span>
+    <span
+            id="commonAttributes-attributes" fxLayout="column" fxFlex="100" fxFlexFill
+            fxLayoutAlign="start start"
+            fxLayoutGap="1rem">
+        <span>Common Attributes</span>
+        <span
+                fxLayout="row wrap" fxFlexFill fxLayoutGap="1.5rem grid"
+                fxLayoutAlign="start start">
+            <ng-container
+                    *ngFor="let commonAttributeData of commonAttributesBulkEditData">
+                <ng-container
+                        [ngTemplateOutlet]="commonAttributeData.type === 'Single Select'? singleSelectRef: commonAttributeData.type === 'Multi Select'? multiSelectRef: inputTextRef"
+                        [ngTemplateOutletContext]="{ $implicit: commonAttributeData }"></ng-container>
+            </ng-container>
+        </span>
+    </span>
+</div>
