@@ -188,8 +188,11 @@ function convertFlex(flexValue) {
   } else if (flexValue === "grow" || flexValue === "100") {
     return 'flex-[1_1_100%]';
   } else {
-    const [flexGrow, flexShrink, flexBasis] = flexValue.split(' ');
-    return `flex-[${flexGrow}_${flexShrink}_${flexBasis}]`;
+     const [flexGrow, flexShrink, flexBasis] = flexValue.split(' ');
+    if(flexGrow && flexShrink && flexBasis){
+        return 'flex-[' + flexGrow + '_' + flexShrink + '_' + flexBasis + '%]';
+    }
+    return 'flex-[1_1_' + flexGrow + '%]';
   }
 }
 
