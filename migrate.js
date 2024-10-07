@@ -189,7 +189,10 @@ function convertFlex(flexValue) {
     return 'flex-[1_1_100%]';
   } else {
     const [flexGrow, flexShrink, flexBasis] = flexValue.split(' ');
-    return `flex-[${flexGrow}_${flexShrink}_${flexBasis}]`;
+    if(flexGrow && flexShrink && flexBasis){
+        return `flex-[${flexGrow}_${flexShrink}_${flexBasis}%]`;
+    }
+    return `flex-[1_1_${flexGrow}%]`;
   }
 }
 
