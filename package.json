@@ -1,6 +1,6 @@
 {
   "name": "@ngnomads/ngflex2tailwind",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "Tool to Migrate from Angular Flex layout to Tailwind",
   "main": "migrate.js",
   "homepage": "https://github.com/bharathmuppa/ngflex2tailwind/blob/main/README.md",
