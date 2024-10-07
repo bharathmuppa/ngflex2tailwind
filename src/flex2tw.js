@@ -140,11 +140,11 @@ function migrateFxLayoutAlignToTailwind(element) {
       // $(element).attr('ngClass', ngClass);
     } else {
       // Regular case
-      // const [mainAxis, crossAxis] = alignValue.split(' ');
-      // const mainAxisClass = alignMap[mainAxis]?.mainAxis || '';
-      // const crossAxisClass = alignMap[crossAxis]?.crossAxis || '';
-      // $(element).addClass(`${mainAxisClass} ${crossAxisClass} flex`);
-      convertFxLayoutAlignToTailwind(element, alignValue, true);
+      [mainAxis, crossAxis] = alignValue.split("'").join("").split(" ");
+      const mainAxisClass = alignMap[mainAxis]?.mainAxis || '';
+      const crossAxisClass = alignMap[crossAxis]?.crossAxis || '';
+      $(element).addClass(`${mainAxisClass} ${crossAxisClass} flex`);
+      //convertFxLayoutAlignToTailwind(element, alignValue, true);
     }
 
     $(element).removeAttr('fxLayoutAlign [fxLayoutAlign]');
