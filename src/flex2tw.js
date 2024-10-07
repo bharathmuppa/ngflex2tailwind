@@ -382,7 +382,7 @@ function extractTernaryValues(expression) {
 
 function appendNgClass(element, className, condition) {
   // Get the existing ngClass value
-  const existingNgClass = $(element).attr('ngClass') || '{}';
+  const existingNgClass = $(element).attr('[ngClass]') || '{}';
 
   // Parse the existing ngClass as a JavaScript object
   let existingClassObject;
@@ -404,7 +404,7 @@ function appendNgClass(element, className, condition) {
   const ngClassString = JSON.stringify(mergedClassObject).replace(/"/g, "'"); // Convert double quotes back to single quotes
 
   // Set the merged ngClass back to the element
-  $(element).attr('ngClass', ngClassString);
+  $(element).attr('[ngClass]', ngClassString);
 }
 
 
