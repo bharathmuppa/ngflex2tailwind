@@ -15,6 +15,7 @@
     <div [fxFlex]="obj1?.a ===10 ? '10rem' : 'auto'"></div>
     <div [fxLayoutAlign]="obj1?.a ===10 ? 'space-around center' : 'start center'"></div>
     <div [fxLayoutAlign]="obj1.a ===10 ? 'space-around center' : 'start center'"></div>
+    <div [fxLayoutAlign]="obj1.a ===10 ? 'space-around center' : 'start center'" [ngClass]="{'classA': part?.a==10}"></div>
 </div>
 <span></span>
 

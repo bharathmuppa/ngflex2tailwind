@@ -96,7 +96,7 @@ function handleFxLayout(element) {
       const falsyClass = layoutMap[ternary.falsy];
       const ngClass = `{ '${truthyClass}':'${ternary.condition.trim()}',  '${falsyClass}'}: '!${ternary.condition.trim()}'`;
       appendNgClass(element, truthyClass, `${ternary.condition.trim()}`);
-      appendNgClass(element, falsyClass, `!${ternary.condition.trim()}`);
+      appendNgClass(element, falsyClass, `!(${ternary.condition.trim()})`);
       //$(element).attr('ngClass', ngClass, '${ternary.condition.trim()}');
     } else {
       $(element).addClass(`flex ${layoutMap[layoutValues]}`);
@@ -218,10 +218,12 @@ function migrateFxFlexToTailwind(element) {
     if (!flexValue) {
       $(element).addClass('flex-[1_1_0%] box-border');
     } else if (flexValue.includes('?')) {
+      $(element).before(`\n<!-- TODO: Ternary operators need carefull migration, before conversion it was: ${flexValue} -->\n`);
+
       const ternary = extractTernaryValues(flexValue);
 
       appendNgClass(element, `${convertFlex(ternary.truthy)}`, `${ternary.condition.trim()}`);
-      appendNgClass(element, `${convertFlex(ternary.falsy)}`, `!${ternary.condition.trim()}`);
+      appendNgClass(element, `${convertFlex(ternary.falsy)}`, `!(${ternary.condition.trim()})`);
 
       // const ngClass = `{${ternary.condition.trim()}: '${convertFlex(ternary.truthy)}', !${ternary.condition.trim()}: '${convertFlex(ternary.falsy)}'}`;
       // $(element).attr('ngClass', ngClass);
@@ -265,7 +267,7 @@ function migrateFlexFillToTailwind(element) {
   $('[fxFill], [fxFlexFill], [\\[fxFlexFill\\]], [\\[fxFill\\]]').each((index, element) => {
     let flexValue = $(element).attr('fxFill') || $(element).attr('[fxFill]') || $(element).attr('fxFlexFill') || $(element).attr('[fxFlexFill]');
 
-    $(element).before(`\n<!-- TODO: Check this conversion, before conversion it was: ${flexValue} -->\n`);
+    $(element).before(`\n<!-- TODO: Check the below conversion, use git compare to see the difference-->\n`);
 
     $(element).removeAttr('fxFlexFill [fxFlexFill] fxFill [fxFill]');
     $(element).addClass('w-full h-full min-w-full min-h-full box-border');
@@ -299,7 +301,7 @@ function extractTernaryValues(expression) {
       const falsyValue = extractValue(node.alternate);
 
       return {
-        condition: condition.trim(), // Trim whitespace from condition for cleaner output
+        condition: condition.trim()?.split("'").join("'"), // Trim whitespace from condition for cleaner output
         truthy: truthyValue.trim(),  // Trim whitespace from truthy value
         falsy: falsyValue.trim()     // Trim whitespace from falsy value
       };
@@ -381,30 +383,30 @@ function extractTernaryValues(expression) {
 
 
 function appendNgClass(element, className, condition) {
-  // Get the existing ngClass value
-  const existingNgClass = $(element).attr('[ngClass]') || '{}';
+  // Get the existing ngClass value as a string (assume it is a valid Angular expression)
+  let existingNgClass = $(element).attr('[ngClass]') || '{}';
 
-  // Parse the existing ngClass as a JavaScript object
-  let existingClassObject;
-  try {
-    existingClassObject = JSON.parse(existingNgClass.replace(/'/g, '"')); // Convert single quotes to double for valid JSON parsing
-  } catch (e) {
-    existingClassObject = {};
+  // Check if it's an empty object, then format it properly
+  if (existingNgClass === '{}') {
+    existingNgClass = `{}`;
   }
 
-  // Create new class condition object
-  const newClassObject = {
-    [className]: condition
-  };
+  // Remove any outer curly braces for easier string manipulation
+  existingNgClass = existingNgClass.replace(/^\{|\}$/g, '').trim();
 
-  // Merge the new class object with the existing class object
-  const mergedClassObject = {...existingClassObject, ...newClassObject};
+  // Create a new class condition entry as a string
+  const newClassEntry = `'${className}': ${condition}`;
 
-  // Convert the merged object back to a string format
-  const ngClassString = JSON.stringify(mergedClassObject).replace(/"/g, "'"); // Convert double quotes back to single quotes
+  // If existing ngClass is empty, just add the new class entry
+  if (existingNgClass === '') {
+    existingNgClass = `{${newClassEntry}}`;
+  } else {
+    // Otherwise, append the new class entry to the existing ngClass
+    existingNgClass = `{${existingNgClass}, ${newClassEntry}}`;
+  }
 
-  // Set the merged ngClass back to the element
-  $(element).attr('[ngClass]', ngClassString);
+  // Set the updated [ngClass] back to the element
+  $(element).attr('[ngClass]', existingNgClass);
 }
 
 
