@@ -80,7 +80,9 @@ function handleFxLayout(element) {
     'row wrap': 'flex-row flex-wrap',
     'wrap row': 'flex-row flex-wrap',
     'column wrap': 'flex-col flex-wrap',
-    'wrap column': 'flex-col flex-wrap'
+    'wrap column': 'flex-col flex-wrap',
+    'row-reverse': 'flex-row-reverse',
+    'column-reverse': 'flex-column-reverse',
   };
 
   $(`[fxLayout], [\\[fxLayout\\]]`).each((index, element) => {
