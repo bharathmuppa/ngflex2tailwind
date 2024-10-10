@@ -12,7 +12,7 @@ program
   .version('1.0.0')
   .description('Migration tool for Angular Flex layout to Tailwind CSS')
   .option('-p, --path <path>', 'Path to folder containing HTML files')
-  .option('-r, --recursive [value]', 'Recursively process sub-folders', true)
+  .option('-r, --recursive [value]', 'Recursively process sub-folders', 'true')
   .parse(process.argv);
 
 // Initialize variables
@@ -21,15 +21,12 @@ let finalPath;
 const options = program.opts();
 let $;
 // Determine the input path based on provided options
-if (options.path && options.recursive) {
-  inputPath = getFinalPath(options.path);
-  inputPath += "/**/*.html";  // Recursive glob pattern
-} else if (!options.path && options.recursive) {
-  inputPath = './**/*.html';  // Default recursive pattern
+inputPath = options.path ? getFinalPath(options.path) : '.';
+if(options.recursive==='true'){
+    inputPath = inputPath+'/**/*.html'
 } else {
-  inputPath = './*.html';  // Default non-recursive pattern
+    inputPath = inputPath+'/*.html'
 }
-
 // Resolve the absolute path
 function getFinalPath(inputPath) {
   const path = require('path');
