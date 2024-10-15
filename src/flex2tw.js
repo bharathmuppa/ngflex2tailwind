@@ -251,9 +251,9 @@ function convertFlex(flexValue) {
   } else {
     const [flexGrow, flexShrink, flexBasis] = flexValue.split(' ');
      if(flexGrow && flexShrink && flexBasis){
-        return `flex-[${flexGrow}_${flexShrink}_${flexBasis}%]`;
+        return flexBasis === 'auto'? `flex-[${flexGrow}_${flexShrink}_${flexBasis}]` : `flex-[${flexGrow}_${flexShrink}_${flexBasis}%]`;
     }
-    return `flex-[1_1_${flexGrow}%]`;
+    return flexGrow === 'auto' ? `flex-[1_1_${flexGrow}]` : `flex-[1_1_${flexGrow}%]`;
   }
 }
 
