@@ -192,7 +192,7 @@ function migrateFxLayoutGapToTailwind(element) {
 
     if (gapValue.includes('?')) {
       $(element).before(`\n<!-- TODO: Ternary operators need carefull migration, before conversion it was: ${gapValue} -->\n`);
-      const ternary = extractTernaryValues(alignValue);
+      const ternary = extractTernaryValues(gapValue);
       const truthyClass = `gap-[${ternary.truthy}]`;
       const falsyClass = `gap-[${ternary.falsy}]`;
 
