@@ -32,5 +32,44 @@ Technically we convert following directives into tailwind utility classes.
 |fxFill	|class="min-w-[100%] w-[100%] min-h-[100%] h-[100%] m-0 "	| {<br> margin: 0;<br>height: 100%;<br>width:100%;<br>min-heght:100%;<br>min-width:100%}
 
 
+# Limitations
+
+There are some limitations in this tool, especially with html elements with self closing tags like img, hr, br, input etc.
+
+Examples from the use cases were
+```text
+</input>
+</img>
+=""
+
+flex-[1_1_0 0 40px]
+flex-[0_0_40px]
+
+flex-[1_1_0 0 5px]
+flex-[0_0_5px]
+
+flex-[1_1_1 1 100%]
+flex-[1_1_100%]
+
+flex-[1_1_1 1 5%]
+flex-[1_1_5%]
+
+flex-[1_1_1 1 95%]
+flex-[1_1_95%]
+
+
+'flex flex-row': layout === 'row',
+'flex flex-col': layout === 'column',
+
+ngClass]="[
+      placeholder ? 'gap-[0.5rem]' : 'gap-[0]',
+      layout === 'row' && 'flex flex-row',
+      layout === 'col' && 'flex flex-col',
+    ]"
+
+fxFlex="start center" => flex-auto
+class="flex-[1_1_start%] box-border">
+
+```
 > Note: Still this is in beta version, So please expect to have some bugs.
 > Note: This tool doesn't support the flex responsive api yet.
