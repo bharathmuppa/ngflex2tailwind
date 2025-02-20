@@ -5,7 +5,7 @@ const program = require('commander');
 const fs = require('fs').promises;
 const { glob } = require("glob");
 const cheerio = require('cheerio');
-const { parse } = require('@typescript-eslint/parser'); // Using @typescript-eslint/parser for advanced syntax parsing
+const { parse } = require('@typescript-eslint/parser'); // Advanced syntax parsing
 
 // Define the command-line interface using Commander
 program
@@ -20,12 +20,11 @@ let inputPath;
 let finalPath;
 const options = program.opts();
 let $;
-// Determine the input path based on provided options
 inputPath = options.path ? getFinalPath(options.path) : '.';
 if (options.recursive === 'true') {
-  inputPath = inputPath + '/**/*.html'
+  inputPath = inputPath + '/**/*.html';
 } else {
-  inputPath = inputPath + '/*.html'
+  inputPath = inputPath + '/*.html';
 }
 
 // Resolve the absolute path
@@ -37,11 +36,9 @@ function getFinalPath(inputPath) {
 // Main function to loop over HTML templates and apply conversions
 async function loopOverTemplates() {
   try {
-    const templates = await glob(inputPath, {ignore: 'node_modules/**'});
-
+    const templates = await glob(inputPath, { ignore: 'node_modules/**' });
     for (const templatePath of templates) {
       console.info(`Processing file: ${templatePath}`);
-
       const contents = await fs.readFile(templatePath, 'utf8');
       $ = cheerio.load(contents, {
         xmlMode: true,
@@ -49,7 +46,6 @@ async function loopOverTemplates() {
         normalizeWhitespace: false,
         selfClosingTags: false,
       });
-
       // Apply migration functions
       handleFxLayout($);
       handleResponsiveFxLayout($);
@@ -57,23 +53,21 @@ async function loopOverTemplates() {
       migrateFxLayoutGapToTailwind($);
       migrateFxFlexToTailwind($);
       migrateFlexFillToTailwind($);
-
       // Save the modified HTML
       const outputPath = finalPath || templatePath;
-      await fs.writeFile(outputPath, $.html({xmlMode: true}), {encoding: 'utf-8'});
+      await fs.writeFile(outputPath, $.html({ xmlMode: true }), { encoding: 'utf-8' });
     }
-
     console.log("Processing completed");
   } catch (error) {
     console.error("Error processing templates:", error);
   }
 }
-
-// Execute the main function
 loopOverTemplates();
 
 
-// Function to migrate fxLayout attribute to Tailwind classes
+// ---------- Conversion Functions ----------
+
+// Converts fxLayout attribute to Tailwind classes (produces a ternary [ngClass])
 function handleFxLayout(element) {
   const $ = element;
   const layoutMap = {
@@ -84,18 +78,19 @@ function handleFxLayout(element) {
     'column wrap': 'flex-col flex-wrap',
     'wrap column': 'flex-col flex-wrap',
     'row-reverse': 'flex-row-reverse',
-    'column-reverse': 'flex-col-reverse', // corrected mapping
+    'column-reverse': 'flex-col-reverse',
   };
-
   $(`[fxLayout], [\\[fxLayout\\]]`).each((index, elem) => {
     const layoutValues = $(elem).attr('fxLayout') || $(elem).attr('[fxLayout]');
     if (layoutValues && layoutValues.includes('?')) {
-      $(elem).before(`\n<!-- TODO: Ternary operators need careful migration, before conversion it was: ${layoutValues} -->\n`);
+      $(elem).before(`\n<!-- TODO: Ternary migration: ${layoutValues} -->\n`);
       const ternary = extractTernaryValues(layoutValues);
       const condition = ternary.condition.trim();
-      const truthyClass = `flex ${layoutMap[ternary.truthy]}`;
-      const falsyClass = `flex ${layoutMap[ternary.falsy]}`;
-      // Set [ngClass] with array syntax and a single ternary expression
+      const truthyValue = stringConversion(ternary.truthy).trim();
+      const falsyValue = stringConversion(ternary.falsy).trim();
+      const truthyClass = (`flex ${layoutMap[truthyValue] || ''}`).trim();
+      const falsyClass = (`flex ${layoutMap[falsyValue] || ''}`).trim();
+      // Set a single ternary expression in [ngClass]
       $(elem).attr('[ngClass]', `[${condition} ? '${truthyClass}' : '${falsyClass}']`);
     } else {
       $(elem).addClass(`flex ${layoutMap[layoutValues]}`);
@@ -104,72 +99,105 @@ function handleFxLayout(element) {
   });
 }
 
-// Function to mark unresolved responsive fxLayout attributes
+// Marks responsive fxLayout attributes for manual review.
 function handleResponsiveFxLayout(element) {
   const $ = element;
   $(`[fxLayout\\.sm], [fxLayout\\.xs], [fxLayout\\.md], [fxLayout\\.lg], [fxLayout\\.xl]`).each((index, elem) => {
-    $(elem).before(`\n<!-- TODO: Responsive API migration is not handled, please migrate manually. -->\n`);
+    $(elem).before(`\n<!-- TODO: Responsive API migration not handled -->\n`);
   });
 }
 
-// Function to migrate fxLayoutAlign attribute to Tailwind classes
+// Merges fxLayoutAlign conversion into any existing [ngClass] from fxLayout.
 function migrateFxLayoutAlignToTailwind(element) {
   const $ = element;
   const alignMap = {
-    start: {mainAxis: 'justify-start', crossAxis: 'items-start'},
-    end: {mainAxis: 'justify-end', crossAxis: 'items-end'},
-    center: {mainAxis: 'justify-center', crossAxis: 'items-center'},
-    'space-between': {mainAxis: 'justify-between', crossAxis: 'items-center'},
-    'space-around': {mainAxis: 'justify-around', crossAxis: 'items-center'},
-    'space-evenly': {mainAxis: 'justify-evenly', crossAxis: 'items-center'},
-    stretch: {mainAxis: 'justify-start', crossAxis: 'items-stretch'},
-    baseline: {mainAxis: 'justify-start', crossAxis: 'items-baseline'},
+    start: { mainAxis: 'justify-start', crossAxis: 'items-start' },
+    end: { mainAxis: 'justify-end', crossAxis: 'items-end' },
+    center: { mainAxis: 'justify-center', crossAxis: 'items-center' },
+    'space-between': { mainAxis: 'justify-between', crossAxis: 'items-center' },
+    'space-around': { mainAxis: 'justify-around', crossAxis: 'items-center' },
+    'space-evenly': { mainAxis: 'justify-evenly', crossAxis: 'items-center' },
+    stretch: { mainAxis: 'justify-start', crossAxis: 'items-stretch' },
+    baseline: { mainAxis: 'justify-start', crossAxis: 'items-baseline' },
   };
-
   $('[fxLayoutAlign], [\\[fxLayoutAlign\\]]').each((index, elem) => {
     const alignValue = $(elem).attr('fxLayoutAlign') || $(elem).attr('[fxLayoutAlign]');
     if (alignValue && alignValue.includes('?')) {
-      $(elem).before(`\n<!-- TODO: Ternary operators need careful migration, before conversion it was: ${alignValue} -->\n`);
+      $(elem).before(`\n<!-- TODO: Ternary migration: ${alignValue} -->\n`);
       const ternary = extractTernaryValues(alignValue);
       const condition = ternary.condition.trim();
-
-      // Process truthy and falsy values (assumed to be space-separated)
-      const truthyValues = ternary.truthy.replace(/'/g, "").split(" ").filter(Boolean);
-      const falsyValues = ternary.falsy.replace(/'/g, "").split(" ").filter(Boolean);
-      const truthyMainClass = truthyValues[0] && alignMap[truthyValues[0]] ? alignMap[truthyValues[0]].mainAxis : '';
-      const truthyCrossClass = truthyValues[1] && alignMap[truthyValues[1]] ? alignMap[truthyValues[1]].crossAxis : '';
-      const falsyMainClass = falsyValues[0] && alignMap[falsyValues[0]] ? alignMap[falsyValues[0]].mainAxis : '';
-      const falsyCrossClass = falsyValues[1] && alignMap[falsyValues[1]] ? alignMap[falsyValues[1]].crossAxis : '';
-      const truthyClass = `flex ${truthyMainClass} ${truthyCrossClass}`;
-      const falsyClass = `flex ${falsyMainClass} ${falsyCrossClass}`;
-      $(elem).attr('[ngClass]', `[${condition} ? '${truthyClass}' : '${falsyClass}']`);
+      const truthyStr = stringConversion(ternary.truthy).trim();
+      const falsyStr = stringConversion(ternary.falsy).trim();
+      // Split into tokens (e.g. "space-between center")
+      const truthyTokens = truthyStr.split(/\s+/).filter(Boolean);
+      const falsyTokens = falsyStr.split(/\s+/).filter(Boolean);
+      let alignTruthy = '';
+      if (truthyTokens.length) {
+        alignTruthy = ((alignMap[truthyTokens[0]] ? alignMap[truthyTokens[0]].mainAxis : '') +
+          (truthyTokens[1] ? ' ' + (alignMap[truthyTokens[1]] ? alignMap[truthyTokens[1]].crossAxis : '') : '')).trim();
+      }
+      let alignFalsy = '';
+      if (falsyTokens.length) {
+        alignFalsy = ((alignMap[falsyTokens[0]] ? alignMap[falsyTokens[0]].mainAxis : '') +
+          (falsyTokens[1] ? ' ' + (alignMap[falsyTokens[1]] ? alignMap[falsyTokens[1]].crossAxis : '') : '')).trim();
+      }
+      // Merge with existing [ngClass] if present
+      const existingNgClass = $(elem).attr('[ngClass]');
+      if (existingNgClass) {
+        let expr = existingNgClass.trim();
+        if (expr.startsWith('[') && expr.endsWith(']')) {
+          expr = expr.slice(1, -1);
+        }
+        const ternaryRegex = /^(.*?)\?(.*?)\:(.*)$/;
+        const matches = expr.match(ternaryRegex);
+        if (matches) {
+          let existingCondition = matches[1].trim();
+          let existingTruthy = matches[2].trim().replace(/^['"]|['"]$/g, '');
+          let existingFalsy = matches[3].trim().replace(/^['"]|['"]$/g, '');
+          // If the condition from fxLayout and fxLayoutAlign match, merge classes
+          if (existingCondition === condition) {
+            let newTruthy = (existingTruthy + (alignTruthy ? ' ' + alignTruthy : '')).trim();
+            let newFalsy = (existingFalsy + (alignFalsy ? ' ' + alignFalsy : '')).trim();
+            $(elem).attr('[ngClass]', `[${condition} ? '${newTruthy}' : '${newFalsy}']`);
+          } else {
+            // If conditions differ, do not merge (fallback: leave existing)
+            $(elem).attr('[ngClass]', `[${existingCondition} ? '${existingTruthy}' : '${existingFalsy}']`);
+          }
+        } else {
+          $(elem).attr('[ngClass]', `[${condition} ? '${alignTruthy ? ('flex ' + alignTruthy) : 'flex'}' : '${alignFalsy ? ('flex ' + alignFalsy) : 'flex'}']`);
+        }
+      } else {
+        // No existing [ngClass] – set one with a default 'flex' prefix.
+        const prefixTruthy = alignTruthy ? 'flex ' : 'flex';
+        const prefixFalsy = alignFalsy ? 'flex ' : 'flex';
+        $(elem).attr('[ngClass]', `[${condition} ? '${prefixTruthy + alignTruthy}' : '${prefixFalsy + alignFalsy}']`);
+      }
     } else {
-      const [mainAxis, crossAxis] = alignValue.replace(/'/g, "").split(" ");
-      const mainAxisClass = alignMap[mainAxis]?.mainAxis || '';
-      const crossAxisClass = alignMap[crossAxis]?.crossAxis || '';
-      $(elem).addClass(`${mainAxisClass} ${crossAxisClass} flex`);
+      // Non-ternary: simply add the mapped classes.
+      const tokens = alignValue.replace(/'/g, "").split(/\s+/).filter(Boolean);
+      const mainAxisClass = tokens[0] && alignMap[tokens[0]] ? alignMap[tokens[0]].mainAxis : '';
+      const crossAxisClass = tokens[1] && alignMap[tokens[1]] ? alignMap[tokens[1]].crossAxis : '';
+      $(elem).addClass(`flex ${mainAxisClass} ${crossAxisClass}`.trim());
     }
     $(elem).removeAttr('fxLayoutAlign [fxLayoutAlign]');
   });
 }
 
-// Function to migrate fxLayoutGap attribute to Tailwind classes
+// Converts fxLayoutGap attribute to Tailwind gap classes (ignores extra tokens like "grid")
 function migrateFxLayoutGapToTailwind(element) {
   const $ = element;
   $('[fxLayoutGap], [\\[fxLayoutGap\\]]').each((index, elem) => {
     const gapValue = $(elem).attr('fxLayoutGap') || $(elem).attr('[fxLayoutGap]');
     if (gapValue.includes('?')) {
-      $(elem).before(`\n<!-- TODO: Ternary operators need careful migration, before conversion it was: ${gapValue} -->\n`);
+      $(elem).before(`\n<!-- TODO: Ternary migration: ${gapValue} -->\n`);
       const ternary = extractTernaryValues(gapValue);
       const condition = ternary.condition.trim();
-      // Process each part to extract only the gap size (exclude extra words like "grid")
       const truthySize = ternary.truthy.split(' ')[0];
       const falsySize = ternary.falsy.split(' ')[0];
       const truthyClass = `gap-[${truthySize}]`;
       const falsyClass = `gap-[${falsySize}]`;
       $(elem).attr('[ngClass]', `[${condition} ? '${truthyClass}' : '${falsyClass}']`);
     } else {
-      // Process non-ternary value: use the first token as the gap size
       const gapSize = gapValue.split(' ')[0];
       $(elem).addClass(`gap-[${gapSize}]`);
     }
@@ -177,7 +205,7 @@ function migrateFxLayoutGapToTailwind(element) {
   });
 }
 
-// Function to migrate fxFlex attribute to Tailwind classes
+// Converts fxFlex attribute to Tailwind flex classes.
 function migrateFxFlexToTailwind(element) {
   const $ = element;
   $('[fxFlex], [\\[fxFlex\\]]').each((index, elem) => {
@@ -185,7 +213,7 @@ function migrateFxFlexToTailwind(element) {
     if (!flexValue) {
       $(elem).addClass('flex-[1_1_0%] box-border');
     } else if (flexValue.includes('?')) {
-      $(elem).before(`\n<!-- TODO: Ternary operators need careful migration, before conversion it was: ${flexValue} -->\n`);
+      $(elem).before(`\n<!-- TODO: Ternary migration: ${flexValue} -->\n`);
       const ternary = extractTernaryValues(flexValue);
       const condition = ternary.condition.trim();
       let truthyClass = `${convertFlex(ternary.truthy)} box-border`;
@@ -231,34 +259,22 @@ function convertFlex(flexValue) {
   }
 }
 
-// Function to migrate fxFlexFill attribute to Tailwind classes
+// Converts fxFlexFill attribute to Tailwind classes.
 function migrateFlexFillToTailwind(element) {
   const $ = element;
   $('[fxFill], [fxFlexFill], [\\[fxFlexFill\\]], [\\[fxFill\\]]').each((index, elem) => {
     let flexValue = $(elem).attr('fxFill') || $(elem).attr('[fxFill]') || $(elem).attr('fxFlexFill') || $(elem).attr('[fxFlexFill]');
-    $(elem).before(`\n<!-- TODO: Check the below conversion, use git compare to see the difference-->\n`);
+    $(elem).before(`\n<!-- TODO: Check conversion below, compare with git diff -->\n`);
     $(elem).removeAttr('fxFlexFill [fxFlexFill] fxFill [fxFill]');
     $(elem).addClass('w-full h-full min-w-full min-h-full box-border');
   });
 }
 
-/**
- * Extracts the condition, truthy value, and falsy value from a ternary expression.
- *
- * @param {string} expression - The ternary expression as a string.
- * @returns {Object} An object containing the condition, truthy value, and falsy value.
- * @throws Will throw an error if the expression is not a valid ternary expression.
- */
-function extractTernaryValues(expression) {
-  // Parse the input expression into an AST using the TypeScript ESLint parser.
-  const ast = parse(expression, { ecmaVersion: 'latest', sourceType: 'module' });
+// ---------- Utility Functions ----------
 
-  /**
-   * Recursively traverses the AST node to extract ternary expression parts.
-   *
-   * @param {Object} node - The AST node to be traversed.
-   * @returns {Object|null} An object containing the ternary condition, truthy, and falsy values.
-   */
+// Uses the TypeScript ESLint parser to extract ternary parts.
+function extractTernaryValues(expression) {
+  const ast = parse(expression, { ecmaVersion: 'latest', sourceType: 'module' });
   function extractFromNode(node) {
     if (node.type === 'ConditionalExpression') {
       const condition = extractTest(node.test);
@@ -272,7 +288,6 @@ function extractTernaryValues(expression) {
     }
     return null;
   }
-
   function extractTest(testNode) {
     if (testNode.type === 'BinaryExpression') {
       const left = extractValue(testNode.left);
@@ -288,7 +303,6 @@ function extractTernaryValues(expression) {
     }
     return extractValue(testNode);
   }
-
   function extractValue(valueNode) {
     if (valueNode.type === 'Identifier') {
       return valueNode.name;
@@ -301,7 +315,6 @@ function extractTernaryValues(expression) {
     }
     return expression.substring(valueNode.range[0], valueNode.range[1]);
   }
-
   const result = extractFromNode(ast.body[0].expression);
   if (!result) {
     throw new Error('Invalid ternary expression format');
@@ -309,23 +322,7 @@ function extractTernaryValues(expression) {
   return result;
 }
 
-// Old function retained if needed for non-ternary appending
-function appendNgClass(element, className, condition) {
-  let existingNgClass = $(element).attr('[ngClass]') || '{}';
-  if (existingNgClass === '{}') {
-    existingNgClass = `{}`;
-  }
-  existingNgClass = existingNgClass.replace(/^\{|\}$/g, '').trim();
-  const newClassEntry = `'${className}': ${condition}`;
-  if (existingNgClass === '') {
-    existingNgClass = `{${newClassEntry}}`;
-  } else {
-    existingNgClass = `{${existingNgClass}, ${newClassEntry}}`;
-  }
-  $(element).attr('[ngClass]', existingNgClass);
-}
-
-// Utility function to strip quotes from a string
+// Strips single quotes from the beginning and end of a string.
 function stringConversion(input) {
   return input.replace(/^'|'$/g, '');
 }

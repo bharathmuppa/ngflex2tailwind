@@ -1,9 +1,5 @@
-<div [ngClass]="{isBusy === true || !hideHelp: 'flex-[0_0_40px]', !isBusy === true || !hideHelp: 'flex-[0_0_5px]'}"
+<div [fxLayoutAlign]="(align?.toLowerCase() === 'vertical') ? '' : 'space-between center'"
+     [fxLayout]="(align?.toLowerCase() === 'vertical') ? 'column' : 'row'"
      class="box-border">
-
-</div>
-
-<div [ngClass]="{ 'flex-[0_0_40px]' : isBusy === true || !hideHelp, 'flex-[0_0_5px]':!(isBusy === true || !hideHelp)}"
-        class="box-border">
 
 </div>
