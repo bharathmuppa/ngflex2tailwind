@@ -85,8 +85,9 @@ async function loopOverTemplates() {
   }
 }
 
-
-await loopOverTemplates();
+ loopOverTemplates().then(() => {
+  console.log("Migration completed successfully.");
+ });
 
 
 // ---------- Conversion Functions ----------
