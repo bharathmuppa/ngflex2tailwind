@@ -1,0 +1,12 @@
+
+<!-- TODO: Ternary migration: (align?.toLowerCase() === 'vertical') ? 'column' : 'row' -->
+
+<!-- TODO: Ternary migration: (align?.toLowerCase() === 'vertical') ? '' : 'space-between center' -->
+<div class="box-border" [ngClass]="[align?.toLowerCase() === 'vertical' ? 'flex flex-col' : 'flex flex-row justify-between items-center']">
+
+</div>
+
+
+<div class="flex flex-row">
+    <span class="flex-[1_1_52%] box-border"></span>
+</div>

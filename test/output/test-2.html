@@ -1,0 +1,34 @@
+<div class="flex flex-col justify-start items-start gap-[0.6rem]">
+
+    <!-- TODO: Check conversion below, compare with git diff -->
+    <span id="structure-attributes" class="flex flex-col justify-start items-start gap-[1rem] flex-[1_1_100%] box-border w-full h-full min-w-full min-h-full">
+
+        <span>Structure Attributes</span>
+
+        <!-- TODO: Check conversion below, compare with git diff -->
+<span class="flex flex-row flex-wrap justify-start items-start gap-[1.5rem] w-full h-full min-w-full min-h-full box-border">
+            <ng-container *ngFor="let structureData of structureBulkEditData">
+                <ng-container [ngTemplateOutlet]="structureData.type === 'Single Select' ? singleSelectRef : structureData.type === 'Multi Select' ? multiSelectRef : inputTextRef" [ngTemplateOutletContext]="{ $implicit: structureData }"></ng-container>
+            </ng-container>
+        </span>
+    </span>
+
+    <!-- TODO: Check conversion below, compare with git diff -->
+    <span class="flex flex-row w-full h-full min-w-full min-h-full box-border">
+
+<!-- TODO: Check conversion below, compare with git diff -->
+<mat-divider class="w-full h-full min-w-full min-h-full box-border"></mat-divider>
+    </span>
+
+    <!-- TODO: Check conversion below, compare with git diff -->
+    <span id="commonAttributes-attributes" class="flex flex-col justify-start items-start gap-[1rem] flex-[1_1_100%] box-border w-full h-full min-w-full min-h-full">
+        <span>Common Attributes</span>
+
+        <!-- TODO: Check conversion below, compare with git diff -->
+<span class="flex flex-row flex-wrap justify-start items-start gap-[1.5rem] w-full h-full min-w-full min-h-full box-border">
+            <ng-container *ngFor="let commonAttributeData of commonAttributesBulkEditData">
+                <ng-container [ngTemplateOutlet]="commonAttributeData.type === 'Single Select'? singleSelectRef: commonAttributeData.type === 'Multi Select'? multiSelectRef: inputTextRef" [ngTemplateOutletContext]="{ $implicit: commonAttributeData }"></ng-container>
+            </ng-container>
+        </span>
+    </span>
+</div>

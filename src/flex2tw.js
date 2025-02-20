@@ -44,7 +44,7 @@ function normalizeCondition(cond) {
 
 // Helper to parse a ternary string using space delimiters.
 function parseTernary(expr) {
-  // Assumes expr is a string like: "align?.toLowerCase() === 'vertical' ? 'flex flex-col' : 'flex flex-row'"
+  // Assumes expr is like: "align?.toLowerCase() === 'vertical' ? 'flex flex-col' : 'flex flex-row'"
   let parts = expr.split(/\s\?\s/);
   if (parts.length < 2) return null;
   let conditionPart = parts[0].trim();
@@ -248,27 +248,28 @@ function migrateFxFlexToTailwind(element) {
   });
 }
 
+// Updated convertFlex to properly handle multi-token values.
 function convertFlex(flexValue) {
-  flexValue = stringConversion(flexValue);
+  flexValue = stringConversion(flexValue).trim();
+  const tokens = flexValue.split(/\s+/).filter(Boolean);
+  if (tokens.length === 3) {
+    let [grow, shrink, basis] = tokens;
+    // If the basis does not include a unit and is not 'auto', append '%'
+    if (!basis.match(/(%|px|rem)$/) && basis !== 'auto') {
+      basis = basis + '%';
+    }
+    return `flex-[${grow}_${shrink}_${basis}]`;
+  }
   if (flexValue === 'auto') {
     return 'flex-[1_1_auto]';
-  } else if (flexValue.includes('%') || flexValue.includes('px') || flexValue.includes('rem')) {
-    return `flex-[1_1_${flexValue}]`;
   } else if (flexValue === "none") {
     return 'flex-[0_0_auto]';
   } else if (flexValue === "grow" || flexValue === "100") {
     return 'flex-[1_1_100%]';
-  } else {
-    const [flexGrow, flexShrink, flexBasis] = flexValue.split(' ');
-    if (flexGrow && flexShrink && flexBasis) {
-      return flexBasis === 'auto'
-        ? `flex-[${flexGrow}_${flexShrink}_${flexBasis}]`
-        : `flex-[${flexGrow}_${flexShrink}_${flexBasis}%]`;
-    }
-    return flexGrow === 'auto'
-      ? `flex-[1_1_${flexGrow}]`
-      : `flex-[1_1_${flexGrow}%]`;
+  } else if (flexValue.includes('%') || flexValue.includes('px') || flexValue.includes('rem')) {
+    return `flex-[1_1_${flexValue}]`;
   }
+  return `flex-[1_1_${flexValue}%]`;
 }
 
 // Converts fxFlexFill attribute to Tailwind classes.

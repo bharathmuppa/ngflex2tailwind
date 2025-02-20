@@ -1,10 +1,8 @@
 <div [fxLayoutAlign]="(align?.toLowerCase() === 'vertical') ? '' : 'space-between center'"
      [fxLayout]="(align?.toLowerCase() === 'vertical') ? 'column' : 'row'"
+     [fxFlex]="(align?.toLowerCase() === 'vertical') ? '100%' : 'auto'"
      class="box-border">
 
 </div>
 
 
-<div fxLayout="row" >
-    <span fxFlex="1 1 52%"></span>
-</div>

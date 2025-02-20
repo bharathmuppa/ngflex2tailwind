@@ -1,0 +1,48 @@
+<div class="flex flex-row justify-around items-center gap-[1rem]"></div>
+<div class="flex flex-col justify-around items-center gap-[1rem]"></div>
+<div class="flex flex-row justify-around items-center gap-[1rem]"></div>
+<div class="flex flex-row justify-around items-center gap-[1rem]">
+    <div class="flex-[1_1_auto] box-border"></div>
+    <div class="flex-[1_1_100%] box-border max-w-[100%]"></div>
+    <div class="flex-[1_1_0%] box-border"></div>
+    <div></div>
+
+    <!-- TODO: Check conversion below, compare with git diff -->
+    <div class="w-full h-full min-w-full min-h-full box-border"></div>
+</div>
+
+<!-- TODO: Check conversion below, compare with git diff -->
+<div class="w-full h-full min-w-full min-h-full box-border"></div>
+<mat-button-toggle></mat-button-toggle>
+
+<!-- TODO: Responsive API migration not handled -->
+
+<!-- TODO: Responsive API migration not handled -->
+<div fxLayout.md="row" class="flex flex-col">
+
+    <!-- TODO: Ternary migration: obj1?.a ===10 ? '10rem' : 'auto' -->
+    <div [ngClass]="[obj1?.a === 10 ? 'flex-[1_1_10rem] box-border' : 'flex-[1_1_auto] box-border']"></div>
+
+    <!-- TODO: Ternary migration: obj1?.a ===10 ? '10rem' : 'auto' -->
+    <div [ngClass]="[obj1?.a === 10 ? 'flex-[1_1_10rem] box-border' : 'flex-[1_1_auto] box-border']"></div>
+
+    <!-- TODO: Ternary migration: obj1?.a ===10 ? 'space-around center' : 'start center' -->
+    <div [ngClass]="[obj1?.a === 10 ? 'flex justify-around items-center' : 'flex justify-start items-center']"></div>
+
+    <!-- TODO: Ternary migration: obj1.a ===10 ? 'space-around center' : 'start center' -->
+    <div [ngClass]="[obj1.a === 10 ? 'flex justify-around items-center' : 'flex justify-start items-center']"></div>
+
+    <!-- TODO: Ternary migration: obj1.a ===10 ? 'space-around center' : 'start center' -->
+    <div [ngClass]="[{'classA': part?.a==10}]"></div>
+</div>
+<span></span>
+
+
+
+
+<!-- TODO: Responsive API migration not handled -->
+
+<!-- TODO: Responsive API migration not handled -->
+<div fxLayout.md="column" class="flex flex-row"></div>
+
+<img src="./non_existing_link.jpg" alt=""></img>
