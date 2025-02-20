@@ -33,7 +33,7 @@ function getFinalPath(inputPath) {
   return path.resolve(inputPath);
 }
 
-// Helper to remove wrapping parentheses from conditions.
+// Helper: Remove wrapping parentheses from a condition.
 function normalizeCondition(cond) {
   cond = cond.trim();
   if (cond.startsWith('(') && cond.endsWith(')')) {
@@ -42,9 +42,8 @@ function normalizeCondition(cond) {
   return cond;
 }
 
-// Helper to parse a ternary string using space delimiters.
+// Helper: Parse a ternary string (splitting on " ? " and " : " with surrounding spaces)
 function parseTernary(expr) {
-  // Assumes expr is like: "align?.toLowerCase() === 'vertical' ? 'flex flex-col' : 'flex flex-row'"
   let parts = expr.split(/\s\?\s/);
   if (parts.length < 2) return null;
   let conditionPart = parts[0].trim();
@@ -85,12 +84,14 @@ async function loopOverTemplates() {
     console.error("Error processing templates:", error);
   }
 }
-loopOverTemplates();
+
+
+await loopOverTemplates();
 
 
 // ---------- Conversion Functions ----------
 
-// Converts fxLayout attribute to Tailwind classes (produces a single ternary [ngClass])
+// fxLayout conversion: Maps 'row'/'column' etc. to Tailwind layout classes.
 function handleFxLayout(element) {
   const $ = element;
   const layoutMap = {
@@ -130,7 +131,8 @@ function handleResponsiveFxLayout(element) {
   });
 }
 
-// Merges fxLayoutAlign conversion into the existing [ngClass] from fxLayout.
+// fxLayoutAlign conversion: Maps alignment tokens to Tailwind alignment classes.
+// Merges with existing [ngClass] if present.
 function migrateFxLayoutAlignToTailwind(element) {
   const $ = element;
   const alignMap = {
@@ -164,7 +166,7 @@ function migrateFxLayoutAlignToTailwind(element) {
         alignFalsy = ((alignMap[falsyTokens[0]] ? alignMap[falsyTokens[0]].mainAxis : '') +
           (falsyTokens[1] ? ' ' + (alignMap[falsyTokens[1]] ? alignMap[falsyTokens[1]].crossAxis : '') : '')).trim();
       }
-      // Merge with existing [ngClass] if present (from fxLayout conversion)
+      // Merge with existing [ngClass] if present.
       const existingNgClass = $(elem).attr('[ngClass]');
       if (existingNgClass) {
         let expr = existingNgClass.trim();
@@ -177,7 +179,6 @@ function migrateFxLayoutAlignToTailwind(element) {
           let newFalsy = (parsed.falsy + (alignFalsy ? ' ' + alignFalsy : '')).trim();
           $(elem).attr('[ngClass]', `[${condition} ? '${newTruthy}' : '${newFalsy}']`);
         } else {
-          // If conditions differ, keep the original.
           $(elem).attr('[ngClass]', `[${expr}]`);
         }
       } else {
@@ -195,7 +196,7 @@ function migrateFxLayoutAlignToTailwind(element) {
   });
 }
 
-// Converts fxLayoutGap attribute to Tailwind gap classes (ignores extra tokens like "grid")
+// fxLayoutGap conversion: Uses only the first token.
 function migrateFxLayoutGapToTailwind(element) {
   const $ = element;
   $('[fxLayoutGap], [\\[fxLayoutGap\\]]').each((index, elem) => {
@@ -217,7 +218,7 @@ function migrateFxLayoutGapToTailwind(element) {
   });
 }
 
-// Converts fxFlex attribute to Tailwind flex classes.
+// fxFlex conversion: Now merges with existing [ngClass] if the condition matches.
 function migrateFxFlexToTailwind(element) {
   const $ = element;
   $('[fxFlex], [\\[fxFlex\\]]').each((index, elem) => {
@@ -227,16 +228,32 @@ function migrateFxFlexToTailwind(element) {
     } else if (flexValue.includes('?')) {
       $(elem).before(`\n<!-- TODO: Ternary migration: ${flexValue} -->\n`);
       const ternary = extractTernaryValues(flexValue);
-      const condition = ternary.condition.trim();
-      let truthyClass = `${convertFlex(ternary.truthy)} box-border`;
-      let falsyClass = `${convertFlex(ternary.falsy)} box-border`;
+      let condition = normalizeCondition(ternary.condition);
+      let newFxTruthy = `${convertFlex(ternary.truthy)} box-border`;
+      let newFxFalsy = `${convertFlex(ternary.falsy)} box-border`;
       if (ternary.truthy.includes('100%')) {
-        truthyClass += ' max-w-[100%]';
+        newFxTruthy += ' max-w-[100%]';
       }
       if (ternary.falsy.includes('100%')) {
-        falsyClass += ' max-w-[100%]';
+        newFxFalsy += ' max-w-[100%]';
       }
-      $(elem).attr('[ngClass]', `[${condition} ? '${truthyClass}' : '${falsyClass}']`);
+      const existingNgClass = $(elem).attr('[ngClass]');
+      if (existingNgClass) {
+        let expr = existingNgClass.trim();
+        if (expr.startsWith('[') && expr.endsWith(']')) {
+          expr = expr.slice(1, -1);
+        }
+        const parsed = parseTernary(expr);
+        if (parsed && parsed.condition === condition) {
+          let mergedTruthy = (parsed.truthy + ' ' + newFxTruthy).trim();
+          let mergedFalsy = (parsed.falsy + ' ' + newFxFalsy).trim();
+          $(elem).attr('[ngClass]', `[${condition} ? '${mergedTruthy}' : '${mergedFalsy}']`);
+        } else {
+          $(elem).attr('[ngClass]', `[${condition} ? '${newFxTruthy}' : '${newFxFalsy}']`);
+        }
+      } else {
+        $(elem).attr('[ngClass]', `[${condition} ? '${newFxTruthy}' : '${newFxFalsy}']`);
+      }
     } else {
       const flexClass = `${convertFlex(flexValue)} box-border`;
       $(elem).addClass(flexClass);
@@ -248,13 +265,12 @@ function migrateFxFlexToTailwind(element) {
   });
 }
 
-// Updated convertFlex to properly handle multi-token values.
+// convertFlex: Updated to properly handle three-token values.
 function convertFlex(flexValue) {
   flexValue = stringConversion(flexValue).trim();
   const tokens = flexValue.split(/\s+/).filter(Boolean);
   if (tokens.length === 3) {
     let [grow, shrink, basis] = tokens;
-    // If the basis does not include a unit and is not 'auto', append '%'
     if (!basis.match(/(%|px|rem)$/) && basis !== 'auto') {
       basis = basis + '%';
     }
@@ -272,7 +288,7 @@ function convertFlex(flexValue) {
   return `flex-[1_1_${flexValue}%]`;
 }
 
-// Converts fxFlexFill attribute to Tailwind classes.
+// fxFlexFill conversion.
 function migrateFlexFillToTailwind(element) {
   const $ = element;
   $('[fxFill], [fxFlexFill], [\\[fxFlexFill\\]], [\\[fxFill\\]]').each((index, elem) => {
@@ -340,7 +356,7 @@ function extractTernaryValues(expression) {
   return result;
 }
 
-// Strips single quotes from the beginning and end of a string.
+// Strips single quotes from beginning and end.
 function stringConversion(input) {
   return input.replace(/^'|'$/g, '');
 }
