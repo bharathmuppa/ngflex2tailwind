@@ -225,7 +225,7 @@ function migrateFxFlexToTailwind(element) {
   $('[fxFlex], [\\[fxFlex\\]]').each((index, elem) => {
     let flexValue = $(elem).attr('fxFlex') || $(elem).attr('[fxFlex]');
     if (!flexValue) {
-      $(elem).addClass('flex-[1_1_0%] box-border');
+      $(elem).addClass('flex-[1_1_auto] box-border');
     } else if (flexValue.includes('?')) {
       $(elem).before(`\n<!-- TODO: Ternary migration: ${flexValue} -->\n`);
       const ternary = extractTernaryValues(flexValue);
