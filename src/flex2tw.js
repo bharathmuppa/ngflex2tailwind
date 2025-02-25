@@ -1,13 +1,25 @@
 #!/usr/bin/env node
+/**
+ * Migration tool for Angular Flex layout to Tailwind CSS.
+ *
+ * This script scans the provided folder for HTML files,
+ * converts Angular Flex Layout directives to Tailwind classes,
+ * and then writes back the modified HTML.
+ *
+ * Usage:
+ *   node ./src/flex2tw.js -p <path-to-html-files> [-r true|false]
+ *
+ * Example:
+ *   npx @ngnomads/tailwind2css projects
+ */
 
-// Import required modules
 const program = require('commander');
 const fs = require('fs').promises;
 const { glob } = require("glob");
 const cheerio = require('cheerio');
 const { parse } = require('@typescript-eslint/parser'); // Advanced syntax parsing
 
-// Define the command-line interface using Commander
+// Define the command-line interface using Commander.
 program
   .version('1.0.0')
   .description('Migration tool for Angular Flex layout to Tailwind CSS')
@@ -15,7 +27,7 @@ program
   .option('-r, --recursive [value]', 'Recursively process sub-folders', 'true')
   .parse(process.argv);
 
-// Initialize variables
+// Initialize variables.
 let inputPath;
 let finalPath;
 const options = program.opts();
@@ -27,7 +39,7 @@ if (options.recursive === 'true') {
   inputPath = inputPath + '/*.html';
 }
 
-// Resolve the absolute path
+// Resolve the absolute path.
 function getFinalPath(inputPath) {
   const path = require('path');
   return path.resolve(inputPath);
@@ -42,7 +54,7 @@ function normalizeCondition(cond) {
   return cond;
 }
 
-// Helper: Parse a ternary string (splitting on " ? " and " : " with surrounding spaces)
+// Helper: Parse a ternary string by splitting on " ? " and " : " (with surrounding spaces).
 function parseTernary(expr) {
   let parts = expr.split(/\s\?\s/);
   if (parts.length < 2) return null;
@@ -55,7 +67,22 @@ function parseTernary(expr) {
   return { condition: conditionPart, truthy: truthyPart, falsy: falsyPart };
 }
 
-// Main function to loop over HTML templates and apply conversions
+// Helper: Fix self-closing tags in the final HTML output.
+// This function finds known self-closing tags (img, br, hr, input, etc.) rendered with an opening and closing tag
+// and converts them to the self-closing form.
+function fixSelfClosingTags(html) {
+  // List of known self-closing tags.
+  const selfClosingTags = ['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'keygen', 'link', 'meta', 'param', 'source', 'track', 'wbr'];
+  selfClosingTags.forEach(tag => {
+    // Regex to match an opening tag, optional attributes, optional whitespace,
+    // then a closing tag for the same element.
+    const regex = new RegExp(`<(${tag})(\\s[^>]*?)?>\\s*<\\/\\1>`, 'gi');
+    html = html.replace(regex, `<$1$2 />`);
+  });
+  return html;
+}
+
+// Main function: Process each HTML template and apply conversions.
 async function loopOverTemplates() {
   try {
     const templates = await glob(inputPath, { ignore: 'node_modules/**' });
@@ -66,18 +93,21 @@ async function loopOverTemplates() {
         xmlMode: true,
         decodeEntities: false,
         normalizeWhitespace: false,
-        selfClosingTags: false,
+        selfClosingTags: false, // We'll fix self closing tags later.
       });
-      // Apply migration functions
+      // Apply migration functions.
       handleFxLayout($);
       handleResponsiveFxLayout($);
       migrateFxLayoutAlignToTailwind($);
       migrateFxLayoutGapToTailwind($);
       migrateFxFlexToTailwind($);
       migrateFlexFillToTailwind($);
-      // Save the modified HTML
+      // Generate output HTML in xmlMode then fix self closing tags.
+      let outputHtml = $.html({ xmlMode: true });
+      outputHtml = fixSelfClosingTags(outputHtml);
+      // Save the modified HTML.
       const outputPath = finalPath || templatePath;
-      await fs.writeFile(outputPath, $.html({ xmlMode: true }), { encoding: 'utf-8' });
+      await fs.writeFile(outputPath, outputHtml, { encoding: 'utf-8' });
     }
     console.log("Processing completed");
   } catch (error) {
@@ -85,10 +115,9 @@ async function loopOverTemplates() {
   }
 }
 
- loopOverTemplates().then(() => {
+loopOverTemplates().then(() => {
   console.log("Migration completed successfully.");
- });
-
+});
 
 // ---------- Conversion Functions ----------
 
@@ -109,7 +138,7 @@ function handleFxLayout(element) {
   $(`[fxLayout], [\\[fxLayout\\]]`).each((index, elem) => {
     const layoutValues = $(elem).attr('fxLayout') || $(elem).attr('[fxLayout]');
     if (layoutValues && layoutValues.includes('?')) {
-      $(elem).before(`\n<!-- TODO: Ternary migration: ${layoutValues} -->\n`);
+      $(elem).before(`\n<!-- TODO: Ngnomads:  Ternary migration: ${layoutValues} -->\n`);
       const ternary = extractTernaryValues(layoutValues);
       let condition = normalizeCondition(ternary.condition);
       const truthyValue = stringConversion(ternary.truthy).trim();
@@ -128,12 +157,11 @@ function handleFxLayout(element) {
 function handleResponsiveFxLayout(element) {
   const $ = element;
   $(`[fxLayout\\.sm], [fxLayout\\.xs], [fxLayout\\.md], [fxLayout\\.lg], [fxLayout\\.xl]`).each((index, elem) => {
-    $(elem).before(`\n<!-- TODO: Responsive API migration not handled -->\n`);
+    $(elem).before(`\n<!-- TODO: Ngnomads:  Responsive API migration not handled -->\n`);
   });
 }
 
-// fxLayoutAlign conversion: Maps alignment tokens to Tailwind alignment classes.
-// Merges with existing [ngClass] if present.
+// fxLayoutAlign conversion: Maps alignment tokens to Tailwind alignment classes and merges with existing [ngClass] if present.
 function migrateFxLayoutAlignToTailwind(element) {
   const $ = element;
   const alignMap = {
@@ -150,7 +178,7 @@ function migrateFxLayoutAlignToTailwind(element) {
   $('[fxLayoutAlign], [\\[fxLayoutAlign\\]]').each((index, elem) => {
     const alignValue = $(elem).attr('fxLayoutAlign') || $(elem).attr('[fxLayoutAlign]');
     if (alignValue && alignValue.includes('?')) {
-      $(elem).before(`\n<!-- TODO: Ternary migration: ${alignValue} -->\n`);
+      $(elem).before(`\n<!-- TODO: Ngnomads:  Ternary migration: ${alignValue} -->\n`);
       const ternary = extractTernaryValues(alignValue);
       let condition = normalizeCondition(ternary.condition);
       const truthyStr = stringConversion(ternary.truthy).trim();
@@ -203,7 +231,7 @@ function migrateFxLayoutGapToTailwind(element) {
   $('[fxLayoutGap], [\\[fxLayoutGap\\]]').each((index, elem) => {
     const gapValue = $(elem).attr('fxLayoutGap') || $(elem).attr('[fxLayoutGap]');
     if (gapValue.includes('?')) {
-      $(elem).before(`\n<!-- TODO: Ternary migration: ${gapValue} -->\n`);
+      $(elem).before(`\n<!-- TODO: Ngnomads:  Ternary migration: ${gapValue} -->\n`);
       const ternary = extractTernaryValues(gapValue);
       const condition = ternary.condition.trim();
       const truthySize = ternary.truthy.split(' ')[0];
@@ -219,7 +247,7 @@ function migrateFxLayoutGapToTailwind(element) {
   });
 }
 
-// fxFlex conversion: Now merges with existing [ngClass] if the condition matches.
+// fxFlex conversion: Merges with existing [ngClass] if condition matches.
 function migrateFxFlexToTailwind(element) {
   const $ = element;
   $('[fxFlex], [\\[fxFlex\\]]').each((index, elem) => {
@@ -227,7 +255,7 @@ function migrateFxFlexToTailwind(element) {
     if (!flexValue) {
       $(elem).addClass('flex-[1_1_auto] box-border');
     } else if (flexValue.includes('?')) {
-      $(elem).before(`\n<!-- TODO: Ternary migration: ${flexValue} -->\n`);
+      $(elem).before(`\n<!-- TODO: Ngnomads:  Ternary migration: ${flexValue} -->\n`);
       const ternary = extractTernaryValues(flexValue);
       let condition = normalizeCondition(ternary.condition);
       let newFxTruthy = `${convertFlex(ternary.truthy)} box-border`;
@@ -279,6 +307,8 @@ function convertFlex(flexValue) {
   }
   if (flexValue === 'auto') {
     return 'flex-[1_1_auto]';
+  } else if(flexValue === ''){
+    return '';
   } else if (flexValue === "none") {
     return 'flex-[0_0_auto]';
   } else if (flexValue === "grow" || flexValue === "100") {
@@ -295,7 +325,7 @@ function migrateFlexFillToTailwind(element) {
   $('[fxFill], [fxFlexFill], [\\[fxFlexFill\\]], [\\[fxFill\\]]').each((index, elem) => {
     let flexValue = $(elem).attr('fxFill') || $(elem).attr('[fxFill]') ||
       $(elem).attr('fxFlexFill') || $(elem).attr('[fxFlexFill]');
-    $(elem).before(`\n<!-- TODO: Check conversion below, compare with git diff -->\n`);
+    $(elem).before(`\n<!-- TODO: Ngnomads:  Check conversion below, compare with git diff -->\n`);
     $(elem).removeAttr('fxFlexFill [fxFlexFill] fxFill [fxFill]');
     $(elem).addClass('w-full h-full min-w-full min-h-full box-border');
   });
@@ -357,7 +387,7 @@ function extractTernaryValues(expression) {
   return result;
 }
 
-// Strips single quotes from beginning and end.
+// Strips single quotes from the beginning and end of a string.
 function stringConversion(input) {
   return input.replace(/^'|'$/g, '');
 }
